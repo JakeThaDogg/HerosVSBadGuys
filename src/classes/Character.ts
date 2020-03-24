@@ -1,6 +1,11 @@
 import Weapon from "./Weapon";
 import { getRandomNumber } from "../scripts/random";
 
+export interface Attack {
+  damage: number;
+  isCritical: boolean;
+  targetPosition: number;
+}
 export default class Character {
   private _name: string;
   private _hp: number;
@@ -53,11 +58,21 @@ export default class Character {
     this._weapon = weapon;
   }
 
+  //  Critical rate roll
+
+  isCritical = () => getRandomNumber(0, 100) <= this._weapon.criticalRate;
+
   // Returns data with target and damage
-  attack = (target: any) => {
+  attack = (target: any): Attack => {
+    const isCritical = this.isCritical();
+    let damage = getRandomNumber(this._weapon.minDamage, this.weapon.maxDamage);
+    if (isCritical) {
+      damage = damage * 3;
+    }
     return {
-      damage: getRandomNumber(this._weapon.minDamage, this.weapon.maxDamage),
-      targetPosition: target()
+      damage,
+      targetPosition: target,
+      isCritical
     };
   };
 
@@ -65,5 +80,5 @@ export default class Character {
   target = (enemyTeamLength: number) => getRandomNumber(0, enemyTeamLength);
 
   receiveDamage = (damage: number) =>
-    (this._hp = this.hp - (damage - this._block));
+    (this.hp = this.hp - (damage - this._block));
 }
