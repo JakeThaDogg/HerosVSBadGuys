@@ -1,9 +1,11 @@
 import Battle from "./classes/Battle";
 
-const readline = require("readline").createInterface({
-  input: process.stdin,
-  output: process.stdout
+const battle = new Battle();
+
+battle.start().then(() => {
+  while (!battle.isFinished) {
+    const game = battle.game;
+    const attacker = battle.currentAttacker;
+    battle.turn(attacker, game.getOppositeTeam(attacker));
+  }
 });
-readline.question("Hero's name: ", (name: any) =>
-  console.log("coucou " + name)
-);

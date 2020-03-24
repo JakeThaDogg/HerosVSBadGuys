@@ -1,6 +1,7 @@
 import Hero from "./Hero";
 import BadGuy from "./BadGuy";
 import Weapon from "./Weapon";
+import { getRandomNumber } from "../scripts/random";
 
 export default class Game {
   _heroes: Hero[];
@@ -30,5 +31,12 @@ export default class Game {
   }
 
   createBadGuy = () =>
-    this.addBadGuy(new BadGuy("", 100, 100, 10, new Weapon(5, 10, 10)));
+    this.addBadGuy(new BadGuy("", 100, 100, 5, new Weapon(7, 14, 15)));
+
+  getOppositeTeam = (character: Hero | BadGuy) =>
+    character instanceof Hero ? this.badGuys : this.heroes;
+
+  // Returns randomly the first attacker team
+  getFirstAttacker = (): Hero[] | BadGuy[] =>
+    [this.heroes, this._badGuys][getRandomNumber(0, 1)];
 }
