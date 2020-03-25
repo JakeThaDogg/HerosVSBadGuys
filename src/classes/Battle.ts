@@ -7,11 +7,6 @@ import Weapon from "./Weapon";
 import inputTerminal from "../scripts/input";
 const capitalize = require("lodash.capitalize");
 
-const readline = require("readline").createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-
 export default class Battle {
   private _isFinished = false;
 
@@ -27,8 +22,11 @@ export default class Battle {
 
   public game = new Game([], []);
 
+  public teamIndex: number;
+
   constructor(isFinished: boolean = false) {
     this._isFinished = isFinished;
+    this.teamIndex = 0;
     Battle._turnNumber = 0;
   }
 
@@ -41,10 +39,13 @@ export default class Battle {
 
   public start = async () => {
     const length: any = await this.selectTeamsLength();
+    // To increase inputs reading
+    require("events").EventEmitter.defaultMaxListeners = length * 3;
     for (let i = 0; i < length; i++) {
       await this.selectHerosAttribute();
     }
-    this.currentAttacker = this.game.getFirstAttacker()[0];
+    this.teamIndex = getRandomNumber(0, length - 1);
+    this.currentAttacker = this.game.getFirstAttacker()[this.teamIndex];
   };
 
   createHero = (name: string, weapon: Weapon) => {
@@ -55,7 +56,7 @@ export default class Battle {
   selectHerosAttribute = async () => {
     const name: any = await this.selectHeroName();
     const selectedWeapon: any = await this.selectWeapon();
-    this.createHero(name, selectedWeapon);
+    this.createHero(capitalize(name), selectedWeapon);
   };
 
   selectHeroName = () => inputTerminal("Hero's name : ");
@@ -77,7 +78,7 @@ export default class Battle {
       )}\n`
     );
 
-    return weapons[index];
+    return weapons[index - 1];
   };
 
   turn = (character: Hero | BadGuy, enemyTeam: Hero[] | BadGuy[]) => {
@@ -89,7 +90,7 @@ export default class Battle {
     targettedEnemy.receiveDamage(attack.damage);
     outputTurn(character, attack, targettedEnemy, Battle._turnNumber);
     this.isDead(targettedEnemy, attack.targetPosition);
-    this.nextPlayer();
+    this.nextPlayer(Boolean(Battle._turnNumber % 2 === 0));
   };
 
   isDead = (character: Hero | BadGuy, index: number) => {
@@ -110,7 +111,13 @@ export default class Battle {
     }
   };
 
-  nextPlayer = () => {
-    this.currentAttacker = this.game.getOppositeTeam(this.currentAttacker)[0];
+  nextPlayer = (shouldIncrementTeamIndex: boolean) => {
+    const oppositeTeam = this.game.getOppositeTeam(this.currentAttacker);
+    if (shouldIncrementTeamIndex) {
+      Boolean(oppositeTeam[this.teamIndex + 1])
+        ? this.teamIndex++
+        : (this.teamIndex = 0);
+    }
+    this.currentAttacker = oppositeTeam[this.teamIndex];
   };
 }
