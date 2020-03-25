@@ -1,9 +1,10 @@
 import Hero from "./Hero";
 import BadGuy from "./BadGuy";
 import Game from "./Game";
-import { outputTurn } from "../scripts/output";
+import { outputTurn, outputResults } from "../scripts/output";
 import { getRandomNumber } from "../scripts/random";
 import Weapon from "./Weapon";
+import inputTerminal from "../scripts/input";
 const capitalize = require("lodash.capitalize");
 
 const readline = require("readline").createInterface({
@@ -28,7 +29,6 @@ export default class Battle {
 
   constructor(isFinished: boolean = false) {
     this._isFinished = isFinished;
-    // this.currentAttacker;
     Battle._turnNumber = 0;
   }
 
@@ -40,43 +40,44 @@ export default class Battle {
   }
 
   public start = async () => {
-    const name: any = await this.selectHeroName();
-    const selectedWeapon: any = await this.selectWeapon();
-    readline.close();
-    await this.createHero(name, selectedWeapon);
+    const length: any = await this.selectTeamsLength();
+    for (let i = 0; i < length; i++) {
+      await this.selectHerosAttribute();
+    }
     this.currentAttacker = this.game.getFirstAttacker()[0];
   };
 
-  createHero = (name: any, weapon: any) => {
+  createHero = (name: string, weapon: Weapon) => {
     this.game.addHero(new Hero(name, 100, 100, 5, weapon));
     this.game.createBadGuy();
   };
 
-  selectHeroName = () =>
-    new Promise((resolve, reject) => {
-      readline.question("Hero's name: ", (answer: string): void => {
-        resolve(capitalize(answer));
-      });
-    });
+  selectHerosAttribute = async () => {
+    const name: any = await this.selectHeroName();
+    const selectedWeapon: any = await this.selectWeapon();
+    this.createHero(name, selectedWeapon);
+  };
 
-  selectWeapon = () => {
+  selectHeroName = () => inputTerminal("Hero's name : ");
+
+  selectTeamsLength = () =>
+    inputTerminal("Choose how many heroes in your team.\n");
+
+  selectWeapon = async () => {
     const weapons = [
       { minDamage: 8, maxDamage: 16, criticalRate: 10 },
       { minDamage: 5, maxDamage: 8, criticalRate: 40 }
     ];
 
-    return new Promise((resolve, reject) => {
-      readline.question(
-        `Choose your weapon: ${weapons.map(
-          ({ minDamage, maxDamage, criticalRate }, index) =>
-            `\n${index +
-              1}: Damage range: ${minDamage}-${maxDamage}. Critical rate: ${criticalRate}`
-        )}\n`,
-        (choiceIndex: number) => {
-          resolve(weapons[choiceIndex - 1]);
-        }
-      );
-    });
+    const index: any = await inputTerminal(
+      `Choose your weapon: ${weapons.map(
+        ({ minDamage, maxDamage, criticalRate }, index) =>
+          `\n${index +
+            1}: Damage range: ${minDamage}-${maxDamage}. Critical rate: ${criticalRate}`
+      )}\n`
+    );
+
+    return weapons[index];
   };
 
   turn = (character: Hero | BadGuy, enemyTeam: Hero[] | BadGuy[]) => {
@@ -104,6 +105,7 @@ export default class Battle {
 
   checkIsGameFinished = (heroes: Hero[], badguys: BadGuy[]) => {
     if (heroes.length === 0 || badguys.length === 0) {
+      outputResults([heroes, badguys].filter(array => array.length > 0)[0]);
       this._isFinished = true;
     }
   };
